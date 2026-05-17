@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiLapor — Koperasi Merah Putih</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --red:#D42B2B;--red-dark:#A81F1F;--red-light:#FFF0F0;
+  --black:#0F0F0F;--white:#FFFFFF;--gray-50:#F8F8F8;--gray-100:#F0F0F0;
+  --gray-200:#E2E2E2;--gray-400:#9A9A9A;--gray-600:#555555;
+  --green:#1A9E5C;--green-light:#EDFAF3;--orange:#E07B2A;--orange-light:#FFF5EB;
+  --blue:#2563EB;--blue-light:#EFF6FF;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white);min-height:100vh;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* LOGIN */
+#screen-login{background:var(--black);align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,43,43,0.18) 0%,transparent 70%);pointer-events:none;}
+.login-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+.login-box{position:relative;width:100%;max-width:400px;z-index:1;}
+.login-logo{text-align:center;margin-bottom:40px;}
+.login-logo .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,43,43,0.15);border:1px solid rgba(212,43,43,0.3);border-radius:100px;padding:6px 14px;margin-bottom:16px;}
+.login-logo .badge span{font-size:12px;color:#FF8080;font-weight:500;letter-spacing:0.5px;}
+.login-logo h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.login-logo h1 em{color:var(--red);font-style:normal;}
+.login-logo p{font-size:13px;color:var(--gray-400);margin-top:6px;}
+.login-form{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px;backdrop-filter:blur(20px);}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.form-group input,.form-group select{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:white;outline:none;transition:border 0.2s;-webkit-appearance:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--red);}
+.form-group select option{background:#1A1A1A;color:white;}
+.btn-login{width:100%;padding:15px;background:var(--red);border:none;border-radius:12px;color:white;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.btn-login:hover{background:var(--red-dark);}
+.btn-login:disabled{opacity:0.5;cursor:not-allowed;}
+.login-hint{text-align:center;margin-top:16px;font-size:12px;color:var(--gray-400);}
+.login-error{background:rgba(212,43,43,0.15);border:1px solid rgba(212,43,43,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#FF8080;margin-top:12px;display:none;text-align:center;}
+.login-error.show{display:block;}
+
+/* APP */
+#screen-koperasi,#screen-pengawas{background:var(--gray-50);color:var(--black);}
+.topbar{background:var(--white);border-bottom:1px solid var(--gray-200);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--black);letter-spacing:-0.5px;}
+.topbar-logo em{color:var(--red);font-style:normal;}
+.topbar-tag{background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:0.5px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:100px;padding:5px 12px 5px 5px;}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--red);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;}
+.user-name{font-size:12px;font-weight:600;color:var(--black);}
+.btn-logout{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:18px;padding:4px;}
+.page-content{flex:1;overflow-y:auto;padding:20px 16px;max-width:720px;margin:0 auto;width:100%;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--gray-100);border-radius:12px;padding:4px;margin-bottom:20px;overflow-x:auto;}
+.tab-btn{flex:1;padding:9px 6px;border:none;border-radius:9px;background:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--gray-600);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.tab-btn.active{background:white;color:var(--black);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+
+/* CARDS */
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;border:1px solid var(--gray-100);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--black);}
+.card-subtitle{font-size:11px;color:var(--gray-400);margin-top:2px;}
+
+/* SECTION DIVIDER */
+.section-divider{display:flex;align-items:center;gap:10px;margin:18px 0 14px;}
+.section-divider-line{flex:1;height:1px;background:var(--gray-100);}
+.section-divider-label{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.8px;background:var(--red-light);padding:4px 10px;border-radius:100px;}
+
+/* FORM */
+.field-group{margin-bottom:12px;}
+.field-group label{display:block;font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
+.field-group input,.field-group select,.field-group textarea{width:100%;background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:10px;padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--black);outline:none;transition:border 0.2s;-webkit-appearance:none;}
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus{border-color:var(--red);background:white;}
+.field-group textarea{resize:vertical;min-height:80px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--gray-200);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;background:var(--gray-50);}
+.upload-zone:hover{border-color:var(--red);background:var(--red-light);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone .u-icon{font-size:24px;margin-bottom:6px;}
+.upload-zone p{font-size:13px;font-weight:600;color:var(--black);margin-bottom:2px;}
+.upload-zone small{font-size:11px;color:var(--gray-400);}
+.file-chip{display:none;align-items:center;gap:10px;background:var(--green-light);border:1px solid rgba(26,158,92,0.2);border-radius:10px;padding:10px 14px;margin-top:10px;}
+.file-chip.show{display:flex;}
+.file-chip-name{flex:1;font-size:13px;font-weight:600;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-chip-remove{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:16px;}
+
+.btn-primary{width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+
+.badge-status{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.badge-status.masuk{background:var(--green-light);color:var(--green);}
+.badge-status.belum{background:var(--orange-light);color:var(--orange);}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{background:white;border:1px solid var(--gray-100);border-radius:14px;padding:14px;}
+.stat-label{font-size:10px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--black);line-height:1;}
+.stat-value.red{color:var(--red);}
+.stat-value.green{color:var(--green);}
+.stat-value.orange{color:var(--orange);}
+.stat-value.blue{color:var(--blue);}
+
+/* REKAP */
+.rekap-hero{background:linear-gradient(135deg,#0F0F0F,#1C1C1C);border-radius:16px;padding:20px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.06);}
+.rekap-hero-label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.rekap-hero-value{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:white;line-height:1;margin-bottom:4px;}
+.rekap-hero-sub{font-size:12px;color:rgba(255,255,255,0.4);}
+.rekap-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.rekap-mini{background:rgba(255,255,255,0.05);border-radius:10px;padding:12px;}
+.rekap-mini-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.rekap-mini-value{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:white;}
+.rekap-mini-value.green{color:#4ADE80;}
+.rekap-mini-value.red{color:#F87171;}
+
+/* BAR CHART */
+.bar-chart{margin-top:4px;}
+.bar-item{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-label{font-size:11px;color:var(--gray-600);width:80px;flex-shrink:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:var(--gray-100);border-radius:100px;height:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:100px;background:var(--red);transition:width 0.6s ease;}
+.bar-fill.green{background:var(--green);}
+.bar-val{font-size:11px;color:var(--gray-400);width:55px;text-align:right;flex-shrink:0;}
+
+/* LIST */
+.laporan-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--gray-100);cursor:pointer;}
+.laporan-item:last-child{border-bottom:none;padding-bottom:0;}
+.laporan-item:first-child{padding-top:0;}
+.laporan-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--blue-light);}
+.laporan-info{flex:1;min-width:0;}
+.laporan-name{font-size:13px;font-weight:600;color:var(--black);margin-bottom:3px;}
+.laporan-meta{font-size:11px;color:var(--gray-400);}
+.laporan-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.laporan-time{font-size:11px;color:var(--gray-400);}
+.kop-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-100);cursor:pointer;}
+.kop-item:last-child{border-bottom:none;}
+.kop-avatar{width:38px;height:38px;border-radius:12px;background:var(--red);color:white;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.kop-info{flex:1;min-width:0;}
+.kop-name{font-size:13px;font-weight:600;color:var(--black);margin-bottom:2px;}
+.kop-last{font-size:11px;color:var(--gray-400);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.show{display:flex;}
+.modal{background:white;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:var(--gray-200);border-radius:100px;margin:0 auto 20px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--black);margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--gray-400);margin-bottom:16px;}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--gray-100);gap:12px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-key{font-size:12px;color:var(--gray-400);font-weight:500;flex-shrink:0;}
+.detail-val{font-size:13px;font-weight:600;color:var(--black);text-align:right;}
+.btn-close-modal{width:100%;padding:14px;background:var(--gray-100);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;color:var(--black);}
+
+/* AI */
+.ai-summary{background:linear-gradient(135deg,#0F0F0F,#1A1A1A);border-radius:14px;padding:16px 18px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08);display:none;}
+.ai-summary.show{display:block;}
+.ai-label{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ai-label span{font-size:11px;font-weight:700;color:#FF8080;text-transform:uppercase;letter-spacing:0.6px;}
+.ai-text{font-size:13px;color:rgba(255,255,255,0.8);line-height:1.7;white-space:pre-wrap;}
+.ai-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.5);}
+.ai-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:#FF8080;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--black);color:white;padding:12px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.empty{text-align:center;padding:32px 20px;}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty p{font-size:13px;color:var(--gray-400);}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--black);}
+.section-count{background:var(--red-light);color:var(--red);font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px;gap:12px;}
+.loading-spin{width:28px;height:28px;border:3px solid var(--gray-200);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite;}
+.loading-screen p{font-size:13px;color:var(--gray-400);}
+
+/* INFO BOX */
+.info-box{background:var(--blue-light);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--blue);margin-bottom:14px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg"></div><div class="login-grid"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="badge"><span>● SISTEM AKTIF</span></div>
+      <h1>Si<em>Lapor</em></h1>
+      <p>Platform Pelaporan Koperasi Merah Putih · Maluku</p>
+    </div>
+    <div class="login-form">
+      <div class="form-group">
+        <label>Masuk sebagai</label>
+        <select id="loginRole" onchange="toggleRoleField()">
+          <option value="">— Pilih peran —</option>
+          <option value="koperasi">Koperasi</option>
+          <option value="pengawas">Pengawas</option>
+        </select>
+      </div>
+      <div class="form-group" id="groupKoperasi" style="display:none">
+        <label>Pilih Koperasi</label>
+        <select id="loginKoperasi"><option>Memuat data...</option></select>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="Masukkan password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="btn-login" id="btnLogin" onclick="doLogin()">Masuk →</button>
+      <div class="login-error" id="loginError"></div>
+      <p class="login-hint">Password pengawas: <strong>pengawas123</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- KOPERASI -->
+<div id="screen-koperasi" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">Si<em>Lapor</em></span>
+      <span class="topbar-tag" id="kopTag">KMP</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="kopAvatar">K</div>
+        <span class="user-name" id="kopName">Koperasi</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">↩</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'tab-kirim')">📤 Kirim Laporan</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-riwayat');loadRiwayat()">📋 Riwayat</button>
+    </div>
+
+    <div id="tab-kirim">
+      <div class="info-box">📋 Format laporan sesuai standar Permenkop UKM No. 2 Tahun 2024. Isi data sesuai kondisi koperasi bulan ini.</div>
+
+      <!-- IDENTITAS -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">📌 Identitas Laporan</div></div></div>
+        <div class="field-row">
+          <div class="field-group"><label>Periode</label>
+            <select id="fPeriode">
+              <option>Mei 2025</option><option>April 2025</option><option>Maret 2025</option>
+              <option>Februari 2025</option><option>Januari 2025</option>
+            </select>
+          </div>
+          <div class="field-group"><label>Jenis Laporan</label>
+            <select id="fJenis">
+              <option>Bulanan</option><option>Triwulan</option><option>Tahunan</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group"><label>Jumlah Anggota Aktif</label>
+          <input type="number" id="fAnggota" placeholder="0"/>
+        </div>
+      </div>
+
+      <!-- NERACA -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">⚖️ Neraca (Posisi Keuangan)</div><div class="card-subtitle">Aset, kewajiban & ekuitas koperasi</div></div></div>
+
+        <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">Aset</div><div class="section-divider-line"></div></div>
+        <div class="field-row">
+          <div class="field-group"><label>Total Aset (Rp)</label><input type="number" id="fTotalAset" placeholder="0"/></div>
+          <div class="field-group"><label>Piutang Anggota (Rp)</label><input type="number" id="fPiutang" placeholder="0"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field-group"><label>Pinjaman Disalurkan (Rp)</label><input type="number" id="fPinjaman" placeholder="0"/></div>
+          <div class="field-group"><label>Total Kewajiban (Rp)</label><input type="number" id="fKewajiban" placeholder="0"/></div>
+        </div>
+
+        <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">Simpanan Anggota</div><div class="section-divider-line"></div></div>
+        <div class="field-row-3">
+          <div class="field-group"><label>Simpanan Pokok (Rp)</label><input type="number" id="fSimpananPokok" placeholder="0"/></div>
+          <div class="field-group"><label>Simpanan Wajib (Rp)</label><input type="number" id="fSimpananWajib" placeholder="0"/></div>
+          <div class="field-group"><label>Simpanan Sukarela (Rp)</label><input type="number" id="fSimpananSukarela" placeholder="0"/></div>
+        </div>
+      </div>
+
+      <!-- PHU -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">📊 Perhitungan Hasil Usaha (PHU)</div><div class="card-subtitle">Pendapatan & beban operasional</div></div></div>
+
+        <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">Pendapatan</div><div class="section-divider-line"></div></div>
+        <div class="field-row">
+          <div class="field-group"><label>Total Pemasukan (Rp)</label><input type="number" id="fPemasukan" placeholder="0"/></div>
+          <div class="field-group"><label>Bunga Pinjaman (Rp)</label><input type="number" id="fBunga" placeholder="0"/></div>
+        </div>
+
+        <div class="section-divider"><div class="section-divider-line"></div><div class="section-divider-label">Beban</div><div class="section-divider-line"></div></div>
+        <div class="field-row">
+          <div class="field-group"><label>Total Pengeluaran (Rp)</label><input type="number" id="fPengeluaran" placeholder="0"/></div>
+          <div class="field-group"><label>SHU Periode Ini (Rp)</label><input type="number" id="fShu" placeholder="0"/></div>
+        </div>
+      </div>
+
+      <!-- CATATAN & RENCANA -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">📝 Catatan & Rencana</div></div></div>
+        <div class="field-group"><label>Kendala yang Dihadapi</label>
+          <textarea id="fKendala" placeholder="Tuliskan kendala operasional, keuangan, atau keanggotaan bulan ini..."></textarea>
+        </div>
+        <div class="field-group"><label>Rencana Tindak Lanjut</label>
+          <textarea id="fRencana" placeholder="Tuliskan rencana perbaikan atau program ke depan..."></textarea>
+        </div>
+        <div class="field-group"><label>Catatan Tambahan</label>
+          <textarea id="fCatatan" placeholder="Informasi lain yang perlu diketahui pengawas..." style="min-height:60px"></textarea>
+        </div>
+      </div>
+
+      <!-- LAMPIRAN -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">📎 Lampiran File</div><div class="card-subtitle">Upload dokumen pendukung (opsional)</div></div></div>
+        <div class="upload-zone">
+          <input type="file" id="kFileInput" accept=".pdf,.xlsx,.xls" onchange="handleKopFile(this)"/>
+          <div class="u-icon">📁</div><p>Ketuk untuk upload file</p><small>PDF atau Excel — laporan keuangan, neraca, dll</small>
+        </div>
+        <div class="file-chip" id="kFileChip">
+          <span>📄</span><span class="file-chip-name" id="kFileName">—</span>
+          <button class="file-chip-remove" onclick="hapusKopFile()">✕</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnKirim" onclick="kirimLaporan()">📤 Kirim Laporan ke Pengawas</button>
+    </div>
+
+    <div id="tab-riwayat" style="display:none">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Laporan Terkirim</div></div>
+        <div id="riwayatList"><div class="loading-screen"><div class="loading-spin"></div><p>Memuat...</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PENGAWAS -->
+<div id="screen-pengawas" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">Si<em>Lapor</em></span>
+      <span class="topbar-tag" style="background:#FFF5EB;color:#E07B2A;">PENGAWAS</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" style="background:#E07B2A;">PW</div>
+        <span class="user-name">Pengawas</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">↩</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'tab-dashboard');loadDashboard()">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-rekap');loadRekap()">📈 Rekap</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-semua');loadSemuaLaporan()">📋 Laporan</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-rangkuman')">✨ AI</button>
+    </div>
+
+    <div id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Koperasi</div><div class="stat-value" id="statTotal">—</div></div>
+        <div class="stat-card"><div class="stat-label">Sudah Lapor</div><div class="stat-value green" id="statSudah">—</div></div>
+        <div class="stat-card"><div class="stat-label">Belum Lapor</div><div class="stat-value orange" id="statBelum">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total Anggota</div><div class="stat-value blue" id="statAnggota">—</div></div>
+      </div>
+      <div class="card">
+        <div class="section-header"><div class="section-title">Status per Kepulauan</div><span class="section-count" id="countKop">—</span></div>
+        <div id="koperasiStatusList"><div class="loading-screen"><div class="loading-spin"></div><p>Memuat...</p></div></div>
+      </div>
+    </div>
+
+    <div id="tab-rekap" style="display:none">
+      <div class="card" style="padding:14px 16px;">
+        <div class="field-row">
+          <div class="field-group" style="margin:0"><label>Filter Periode</label>
+            <select id="rekapPeriode" onchange="loadRekap()">
+              <option value="">Semua Periode</option>
+              <option>Mei 2025</option><option>April 2025</option><option>Maret 2025</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin:0"><label>Filter Kepulauan</label>
+            <select id="rekapPulau" onchange="loadRekap()">
+              <option value="">Semua Kepulauan</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="rekap-hero" id="rekapHero">
+        <div class="loading-screen"><div class="loading-spin" style="border-top-color:#FF8080"></div><p style="color:rgba(255,255,255,0.4)">Menghitung...</p></div>
+      </div>
+      <div class="card" id="rekapChartCard" style="display:none">
+        <div class="card-header"><div><div class="card-title">📊 Pemasukan per Kepulauan</div><div class="card-subtitle" id="rekapChartSub">—</div></div></div>
+        <div class="bar-chart" id="rekapBarChart"></div>
+      </div>
+      <div class="card" id="rekapShuCard" style="display:none">
+        <div class="card-header"><div><div class="card-title">💰 SHU per Kepulauan</div><div class="card-subtitle">Sisa Hasil Usaha periode ini</div></div></div>
+        <div class="bar-chart" id="rekapShuChart"></div>
+      </div>
+      <div class="card" id="rekapRankCard" style="display:none">
+        <div class="card-header"><div><div class="card-title">🏆 Ranking Koperasi</div><div class="card-subtitle">Berdasarkan total pemasukan</div></div></div>
+        <div id="rekapRankList"></div>
+      </div>
+    </div>
+
+    <div id="tab-semua" style="display:none">
+      <div class="card">
+        <div class="section-header"><div class="section-title">Laporan Masuk</div><span class="section-count" id="totalLaporan">—</span></div>
+        <div id="semuaLaporanList"><div class="loading-screen"><div class="loading-spin"></div><p>Memuat...</p></div></div>
+      </div>
+    </div>
+
+    <div id="tab-rangkuman" style="display:none">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">✨ Rangkuman AI</div><div class="card-subtitle">AI merangkum semua laporan otomatis</div></div></div>
+        <div class="field-group"><label>Periode</label>
+          <select id="aiPeriode"><option value="">Semua Periode</option><option>Mei 2025</option><option>April 2025</option></select>
+        </div>
+        <div class="field-group"><label>Fokus Rangkuman</label>
+          <textarea id="aiFokus" placeholder="Contoh: Fokus pada SHU dan koperasi yang belum lapor" style="min-height:70px"></textarea>
+        </div>
+        <button class="btn-primary" onclick="buatRangkuman()">✨ Buat Rangkuman AI</button>
+      </div>
+      <div class="ai-summary" id="aiSummaryBox">
+        <div class="ai-label"><span>✦</span><span>Rangkuman AI</span></div>
+        <div class="ai-text" id="aiSummaryText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Detail</div>
+    <div class="modal-sub" id="modalSub">—</div>
+    <div id="modalBody"></div>
+    <button class="btn-close-modal" onclick="closeModal()">Tutup</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓</div>
+
+<script>
+const SUPABASE_URL='https://vuincywepfqudgrkgecs.supabase.co';
+const SUPABASE_KEY='sb_publishable_EEF-pJtnLlYFBkbJcSaAkw_NmobIvFc';
+const H={'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+
+async function dbGet(table,q=''){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}${q?'?'+q:''}`,{headers:H});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+async function dbInsert(table,data){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+
+let currentUser=null,allKoperasi=[],allLaporan=[];
+
+(async()=>{
+  try{
+    allKoperasi=await dbGet('koperasi','select=*&order=nama');
+    const sel=document.getElementById('loginKoperasi');
+    sel.innerHTML='<option value="">— Pilih koperasi —</option>'+
+      allKoperasi.map(k=>`<option value="${k.id}">${k.nama} — ${k.pulau||''}</option>`).join('');
+  }catch(e){document.getElementById('loginKoperasi').innerHTML='<option>Gagal memuat</option>';}
+})();
+
+function toggleRoleField(){
+  document.getElementById('groupKoperasi').style.display=document.getElementById('loginRole').value==='koperasi'?'block':'none';
+}
+
+async function doLogin(){
+  const role=document.getElementById('loginRole').value;
+  const pass=document.getElementById('loginPassword').value;
+  const btn=document.getElementById('btnLogin');
+  document.getElementById('loginError').classList.remove('show');
+  if(!role)return showLoginError('Pilih peran terlebih dahulu');
+  if(!pass)return showLoginError('Masukkan password');
+  btn.disabled=true;btn.textContent='Memuat...';
+  try{
+    if(role==='pengawas'){
+      if(pass!=='pengawas123')return showLoginError('Password pengawas salah');
+      currentUser={role:'pengawas'};
+      showScreen('screen-pengawas');loadDashboard();
+    }else{
+      const kopId=document.getElementById('loginKoperasi').value;
+      if(!kopId)return showLoginError('Pilih koperasi terlebih dahulu');
+      const kop=allKoperasi.find(k=>String(k.id)===String(kopId));
+      if(!kop)return showLoginError('Koperasi tidak ditemukan');
+      if(kop.password!==pass)return showLoginError('Password salah');
+      currentUser={role:'koperasi',id:kop.id,data:kop};
+      document.getElementById('kopTag').textContent=kop.nama.substring(0,8);
+      document.getElementById('kopAvatar').textContent=kop.nama.substring(0,2).toUpperCase();
+      document.getElementById('kopName').textContent=kop.pulau||kop.nama;
+      showScreen('screen-koperasi');
+    }
+  }catch(e){showLoginError('Error: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='Masuk →';}
+}
+
+function showLoginError(msg){
+  const el=document.getElementById('loginError');
+  el.textContent='⚠️ '+msg;el.classList.add('show');
+  document.getElementById('btnLogin').disabled=false;
+  document.getElementById('btnLogin').textContent='Masuk →';
+}
+function logout(){currentUser=null;showScreen('screen-login');document.getElementById('loginPassword').value='';document.getElementById('loginError').classList.remove('show');}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function switchTab(btn,tabId){
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  let el=btn.closest('.tabs').nextElementSibling;
+  while(el){if(el.id&&el.id.startsWith('tab-'))el.style.display='none';el=el.nextElementSibling;}
+  document.getElementById(tabId).style.display='block';
+}
+
+function handleKopFile(input){if(input.files[0]){document.getElementById('kFileName').textContent=input.files[0].name;document.getElementById('kFileChip').classList.add('show');}}
+function hapusKopFile(){document.getElementById('kFileInput').value='';document.getElementById('kFileChip').classList.remove('show');}
+
+async function kirimLaporan(){
+  const pemasukan=parseInt(document.getElementById('fPemasukan').value)||0;
+  const pengeluaran=parseInt(document.getElementById('fPengeluaran').value)||0;
+  const anggota=parseInt(document.getElementById('fAnggota').value)||0;
+  const catatan=document.getElementById('fCatatan').value;
+  const kendala=document.getElementById('fKendala').value;
+  const rencana=document.getElementById('fRencana').value;
+  const shu=parseInt(document.getElementById('fShu').value)||0;
+  const bunga=parseInt(document.getElementById('fBunga').value)||0;
+  const totalAset=parseInt(document.getElementById('fTotalAset').value)||0;
+  const kewajiban=parseInt(document.getElementById('fKewajiban').value)||0;
+  const piutang=parseInt(document.getElementById('fPiutang').value)||0;
+  const pinjaman=parseInt(document.getElementById('fPinjaman').value)||0;
+  const simpananPokok=parseInt(document.getElementById('fSimpananPokok').value)||0;
+  const simpananWajib=parseInt(document.getElementById('fSimpananWajib').value)||0;
+  const simpananSukarela=parseInt(document.getElementById('fSimpananSukarela').value)||0;
+  const periode=document.getElementById('fPeriode').value;
+  const jenis=document.getElementById('fJenis').value;
+
+  if(!pemasukan&&!anggota&&!catatan){showToast('⚠️ Isi minimal satu data laporan');return;}
+
+  const btn=document.getElementById('btnKirim');
+  btn.disabled=true;btn.textContent='Mengirim...';
+  try{
+    await dbInsert('laporan',{
+      koperasi_id:currentUser.id,
+      koperasi_nama:currentUser.data.nama,
+      pulau:currentUser.data.pulau||'',
+      periode,jenis,
+      pemasukan,pengeluaran,anggota,catatan,kendala,
+      rencana_tindak:rencana,
+      shu,bunga_pinjaman:bunga,
+      total_aset:totalAset,total_kewajiban:kewajiban,
+      piutang_anggota:piutang,
+      pinjaman_disalurkan:pinjaman,
+      simpanan_pokok:simpananPokok,
+      simpanan_wajib:simpananWajib,
+      simpanan_sukarela:simpananSukarela,
+      waktu_kirim:new Date().toISOString()
+    });
+    // Reset form
+    ['fPemasukan','fPengeluaran','fAnggota','fCatatan','fKendala','fRencana',
+     'fShu','fBunga','fTotalAset','fKewajiban','fPiutang','fPinjaman',
+     'fSimpananPokok','fSimpananWajib','fSimpananSukarela'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.value='';
+    });
+    hapusKopFile();
+    showToast('✓ Laporan berhasil dikirim ke pengawas!');
+  }catch(e){showToast('⚠️ Gagal: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='📤 Kirim Laporan ke Pengawas';}
+}
+
+async function loadRiwayat(){
+  const el=document.getElementById('riwayatList');
+  el.innerHTML='<div class="loading-screen"><div class="loading-spin"></div><p>Memuat...</p></div>';
+  try{
+    const data=await dbGet('laporan',`koperasi_id=eq.${currentUser.id}&order=waktu_kirim.desc`);
+    if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Belum ada laporan terkirim</p></div>';return;}
+    el.innerHTML=data.map(l=>`
+      <div class="laporan-item" onclick='showDetailLaporan(${JSON.stringify(l)})'>
+        <div class="laporan-icon">📋</div>
+        <div class="laporan-info"><div class="laporan-name">Laporan ${l.jenis} — ${l.periode}</div>
+        <div class="laporan-meta">Pemasukan: Rp${(l.pemasukan||0).toLocaleString('id')} · SHU: Rp${(l.shu||0).toLocaleString('id')}</div></div>
+        <div class="laporan-right"><span class="badge-status masuk">✓ Terkirim</span><span class="laporan-time">${formatWaktu(l.waktu_kirim)}</span></div>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>'+e.message+'</p></div>';}
+}
+
+async function loadDashboard(){
+  try{
+    const [kops,laps]=await Promise.all([dbGet('koperasi','select=*'),dbGet('laporan','select=*&order=waktu_kirim.desc')]);
+    allKoperasi=kops;allLaporan=laps;
+    const sudahIds=[...new Set(laps.map(l=>l.koperasi_id))];
+    const totalAnggota=laps.reduce((s,l)=>s+(l.anggota||0),0);
+    document.getElementById('statTotal').textContent=kops.length;
+    document.getElementById('statSudah').textContent=sudahIds.length;
+    document.getElementById('statBelum').textContent=kops.length-sudahIds.length;
+    document.getElementById('statAnggota').textContent=totalAnggota.toLocaleString('id');
+    document.getElementById('countKop').textContent=kops.length+' Kepulauan';
+    document.getElementById('koperasiStatusList').innerHTML=kops.map(k=>{
+      const hasPelaporan=sudahIds.includes(k.id);
+      const lastLap=laps.find(l=>l.koperasi_id===k.id);
+      return `<div class="kop-item" onclick="showDetailKop(${k.id})">
+        <div class="kop-avatar">${k.pulau?k.pulau.replace('Kepulauan ','').substring(0,3).toUpperCase():k.nama.substring(0,2).toUpperCase()}</div>
+        <div class="kop-info">
+          <div class="kop-name">${k.nama} — ${k.pulau||''}</div>
+          <div class="kop-last">${lastLap?formatWaktu(lastLap.waktu_kirim)+' · SHU Rp'+(lastLap.shu||0).toLocaleString('id'):'Belum pernah lapor'}</div>
+        </div>
+        ${hasPelaporan?'<span class="badge-status masuk">✓ Lapor</span>':'<span class="badge-status belum">● Belum</span>'}
+      </div>`;
+    }).join('');
+  }catch(e){document.getElementById('koperasiStatusList').innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>'+e.message+'</p></div>';}
+}
+
+async function loadRekap(){
+  const periode=document.getElementById('rekapPeriode').value;
+  const pulau=document.getElementById('rekapPulau').value;
+  const hero=document.getElementById('rekapHero');
+  hero.innerHTML='<div class="loading-screen"><div class="loading-spin" style="border-top-color:#FF8080"></div><p style="color:rgba(255,255,255,0.4)">Menghitung...</p></div>';
+  ['rekapChartCard','rekapShuCard','rekapRankCard'].forEach(id=>document.getElementById(id).style.display='none');
+  try{
+    let q='select=*';
+    if(periode)q+=`&periode=eq.${encodeURIComponent(periode)}`;
+    if(pulau)q+=`&pulau=eq.${encodeURIComponent(pulau)}`;
+    const laps=await dbGet('laporan',q);
+    const allLaps2=await dbGet('laporan','select=pulau');
+    const pulauList=[...new Set(allLaps2.map(l=>l.pulau).filter(Boolean))].sort();
+    const selPulau=document.getElementById('rekapPulau');
+    const curVal=selPulau.value;
+    selPulau.innerHTML='<option value="">Semua Kepulauan</option>'+pulauList.map(p=>`<option${p===curVal?' selected':''}>${p}</option>`).join('');
+
+    const totalPemasukan=laps.reduce((s,l)=>s+(l.pemasukan||0),0);
+    const totalPengeluaran=laps.reduce((s,l)=>s+(l.pengeluaran||0),0);
+    const totalShu=laps.reduce((s,l)=>s+(l.shu||0),0);
+    const totalAnggota=laps.reduce((s,l)=>s+(l.anggota||0),0);
+    const totalAset=laps.reduce((s,l)=>s+(l.total_aset||0),0);
+    const totalSimpanan=laps.reduce((s,l)=>s+(l.simpanan_pokok||0)+(l.simpanan_wajib||0)+(l.simpanan_sukarela||0),0);
+    const jumlahKop=[...new Set(laps.map(l=>l.koperasi_id))].length;
+
+    hero.innerHTML=`
+      <div class="rekap-hero-label">Rekap ${periode||'Semua Periode'}${pulau?' · '+pulau:''}</div>
+      <div class="rekap-hero-value">Rp ${(totalPemasukan/1000000).toFixed(1)} jt</div>
+      <div class="rekap-hero-sub">Total Pemasukan · ${jumlahKop} koperasi · ${laps.length} laporan</div>
+      <div class="rekap-row">
+        <div class="rekap-mini"><div class="rekap-mini-label">Total Pengeluaran</div><div class="rekap-mini-value red">Rp ${(totalPengeluaran/1000000).toFixed(1)}jt</div></div>
+        <div class="rekap-mini"><div class="rekap-mini-label">Total SHU</div><div class="rekap-mini-value green">Rp ${(totalShu/1000000).toFixed(1)}jt</div></div>
+        <div class="rekap-mini"><div class="rekap-mini-label">Total Aset</div><div class="rekap-mini-value">Rp ${(totalAset/1000000).toFixed(1)}jt</div></div>
+        <div class="rekap-mini"><div class="rekap-mini-label">Total Simpanan</div><div class="rekap-mini-value">Rp ${(totalSimpanan/1000000).toFixed(1)}jt</div></div>
+        <div class="rekap-mini"><div class="rekap-mini-label">Total Anggota</div><div class="rekap-mini-value">${totalAnggota.toLocaleString('id')} org</div></div>
+        <div class="rekap-mini"><div class="rekap-mini-label">Rata-rata/Koperasi</div><div class="rekap-mini-value">Rp ${jumlahKop>0?((totalPemasukan/jumlahKop)/1000000).toFixed(1):0}jt</div></div>
+      </div>`;
+
+    if(!laps.length)return;
+
+    const perKop={};
+    laps.forEach(l=>{
+      if(!perKop[l.koperasi_nama])perKop[l.koperasi_nama]={pemasukan:0,pengeluaran:0,shu:0};
+      perKop[l.koperasi_nama].pemasukan+=l.pemasukan||0;
+      perKop[l.koperasi_nama].pengeluaran+=l.pengeluaran||0;
+      perKop[l.koperasi_nama].shu+=l.shu||0;
+    });
+    const sorted=Object.entries(perKop).sort((a,b)=>b[1].pemasukan-a[1].pemasukan);
+    const maxVal=sorted[0]?.[1].pemasukan||1;
+    const maxShu=Math.max(...sorted.map(s=>s[1].shu))||1;
+
+    document.getElementById('rekapBarChart').innerHTML=sorted.map(([nama,v])=>`
+      <div class="bar-item">
+        <div class="bar-label">${nama.replace('KMP-','')}</div>
+        <div style="flex:1">
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v.pemasukan/maxVal*100)}%"></div></div>
+        </div>
+        <div class="bar-val">Rp${(v.pemasukan/1000000).toFixed(1)}jt</div>
+      </div>`).join('');
+    document.getElementById('rekapChartSub').textContent=sorted.length+' kepulauan';
+    document.getElementById('rekapChartCard').style.display='block';
+
+    document.getElementById('rekapShuChart').innerHTML=sorted.map(([nama,v])=>`
+      <div class="bar-item">
+        <div class="bar-label">${nama.replace('KMP-','')}</div>
+        <div class="bar-track" style="flex:1"><div class="bar-fill green" style="width:${Math.round(v.shu/maxShu*100)}%"></div></div>
+        <div class="bar-val">Rp${(v.shu/1000000).toFixed(1)}jt</div>
+      </div>`).join('');
+    document.getElementById('rekapShuCard').style.display='block';
+
+    document.getElementById('rekapRankList').innerHTML=sorted.map(([nama,v],i)=>`
+      <div class="detail-row">
+        <span class="detail-key">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)} ${nama}</span>
+        <span class="detail-val">Rp ${(v.pemasukan/1000000).toFixed(2)}jt</span>
+      </div>`).join('');
+    document.getElementById('rekapRankCard').style.display='block';
+  }catch(e){hero.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p style="color:rgba(255,255,255,0.5)">'+e.message+'</p></div>';}
+}
+
+async function loadSemuaLaporan(){
+  const el=document.getElementById('semuaLaporanList');
+  el.innerHTML='<div class="loading-screen"><div class="loading-spin"></div><p>Memuat...</p></div>';
+  try{
+    const data=await dbGet('laporan','select=*&order=waktu_kirim.desc');
+    document.getElementById('totalLaporan').textContent=data.length+' laporan';
+    if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Belum ada laporan masuk</p></div>';return;}
+    el.innerHTML=data.map(l=>`
+      <div class="laporan-item" onclick='showDetailLaporan(${JSON.stringify(l)})'>
+        <div class="laporan-icon">📋</div>
+        <div class="laporan-info">
+          <div class="laporan-name">${l.koperasi_nama||'Koperasi'} — ${l.pulau||''}</div>
+          <div class="laporan-meta">${l.periode} · ${l.jenis} · SHU Rp${(l.shu||0).toLocaleString('id')}</div>
+        </div>
+        <div class="laporan-right"><span class="badge-status masuk">✓ Masuk</span><span class="laporan-time">${formatWaktu(l.waktu_kirim)}</span></div>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>'+e.message+'</p></div>';}
+}
+
+function showDetailKop(kopId){
+  const laps=allLaporan.filter(l=>l.koperasi_id===kopId);
+  const kop=allKoperasi.find(k=>k.id===kopId);
+  if(!kop)return;
+  const lastLap=laps[0];
+  const totalMasuk=laps.reduce((s,l)=>s+(l.pemasukan||0),0);
+  const totalShu=laps.reduce((s,l)=>s+(l.shu||0),0);
+  document.getElementById('modalTitle').textContent=kop.nama;
+  document.getElementById('modalSub').textContent=kop.pulau||'';
+  document.getElementById('modalBody').innerHTML=`
+    <div class="detail-row"><span class="detail-key">Total Laporan</span><span class="detail-val">${laps.length} laporan</span></div>
+    <div class="detail-row"><span class="detail-key">Total Pemasukan</span><span class="detail-val">Rp ${totalMasuk.toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Total SHU</span><span class="detail-val">Rp ${totalShu.toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Anggota Aktif</span><span class="detail-val">${lastLap?.anggota||'—'} orang</span></div>
+    <div class="detail-row"><span class="detail-key">Total Aset</span><span class="detail-val">${lastLap?.total_aset?'Rp '+lastLap.total_aset.toLocaleString('id'):'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Pinjaman Disalurkan</span><span class="detail-val">${lastLap?.pinjaman_disalurkan?'Rp '+lastLap.pinjaman_disalurkan.toLocaleString('id'):'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Laporan Terakhir</span><span class="detail-val">${lastLap?formatWaktu(lastLap.waktu_kirim):'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Kendala</span><span class="detail-val" style="max-width:180px;text-align:right">${lastLap?.kendala||'—'}</span></div>`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function showDetailLaporan(l){
+  document.getElementById('modalTitle').textContent=(l.koperasi_nama||'Laporan')+' — '+l.periode;
+  document.getElementById('modalSub').textContent=l.jenis+' · '+l.pulau;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="detail-row"><span class="detail-key">Anggota Aktif</span><span class="detail-val">${(l.anggota||0).toLocaleString('id')} orang</span></div>
+    <div class="detail-row"><span class="detail-key">Total Aset</span><span class="detail-val">Rp ${(l.total_aset||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Total Kewajiban</span><span class="detail-val">Rp ${(l.total_kewajiban||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Piutang Anggota</span><span class="detail-val">Rp ${(l.piutang_anggota||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Pinjaman Disalurkan</span><span class="detail-val">Rp ${(l.pinjaman_disalurkan||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Simpanan Pokok</span><span class="detail-val">Rp ${(l.simpanan_pokok||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Simpanan Wajib</span><span class="detail-val">Rp ${(l.simpanan_wajib||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Simpanan Sukarela</span><span class="detail-val">Rp ${(l.simpanan_sukarela||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Total Pemasukan</span><span class="detail-val">Rp ${(l.pemasukan||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Bunga Pinjaman</span><span class="detail-val">Rp ${(l.bunga_pinjaman||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Total Pengeluaran</span><span class="detail-val">Rp ${(l.pengeluaran||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">SHU</span><span class="detail-val">Rp ${(l.shu||0).toLocaleString('id')}</span></div>
+    <div class="detail-row"><span class="detail-key">Kendala</span><span class="detail-val" style="max-width:180px;text-align:right">${l.kendala||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Rencana Tindak</span><span class="detail-val" style="max-width:180px;text-align:right">${l.rencana_tindak||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Catatan</span><span class="detail-val" style="max-width:180px;text-align:right">${l.catatan||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Waktu Kirim</span><span class="detail-val">${formatWaktu(l.waktu_kirim)}</span></div>`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(e){if(!e||e.target===document.getElementById('modalOverlay')||!e.target)document.getElementById('modalOverlay').classList.remove('show');}
+
+async function buatRangkuman(){
+  const box=document.getElementById('aiSummaryBox');
+  const textEl=document.getElementById('aiSummaryText');
+  const fokus=document.getElementById('aiFokus').value.trim();
+  const periode=document.getElementById('aiPeriode').value;
+  box.classList.add('show');
+  textEl.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div> AI sedang merangkum laporan...</div>';
+  try{
+    let q='select=*&order=waktu_kirim.desc';
+    if(periode)q+=`&periode=eq.${encodeURIComponent(periode)}`;
+    const [laps,kops]=await Promise.all([dbGet('laporan',q),dbGet('koperasi','select=*')]);
+    const sudahIds=[...new Set(laps.map(l=>l.koperasi_id))];
+    const belum=kops.filter(k=>!sudahIds.includes(k.id));
+    const totalPemasukan=laps.reduce((s,l)=>s+(l.pemasukan||0),0);
+    const totalShu=laps.reduce((s,l)=>s+(l.shu||0),0);
+    const totalAset=laps.reduce((s,l)=>s+(l.total_aset||0),0);
+    const dataRingkas=laps.map(l=>`${l.koperasi_nama}(${l.pulau||'-'}): pemasukan Rp${(l.pemasukan||0).toLocaleString('id')}, pengeluaran Rp${(l.pengeluaran||0).toLocaleString('id')}, SHU Rp${(l.shu||0).toLocaleString('id')}, aset Rp${(l.total_aset||0).toLocaleString('id')}, anggota ${l.anggota||0}, kendala: ${l.kendala||'-'}`).join('\n');
+    const prompt=`Kamu asisten pengawas Koperasi Desa Merah Putih wilayah Kepulauan Maluku. Data ${laps.length} laporan${periode?' periode '+periode:''}:\n\n${dataRingkas}\n\nTotal pemasukan: Rp${totalPemasukan.toLocaleString('id')}\nTotal SHU: Rp${totalShu.toLocaleString('id')}\nTotal Aset: Rp${totalAset.toLocaleString('id')}\nBelum lapor: ${belum.map(k=>k.nama+' ('+k.pulau+')').join(', ')||'tidak ada'}\n${fokus?'Fokus: '+fokus:''}\n\nBuat rangkuman eksekutif untuk pengawas mencakup: kondisi keuangan keseluruhan, SHU, koperasi terbaik & perlu perhatian, kendala utama, koperasi belum lapor, dan rekomendasi. Format rapi, Bahasa Indonesia profesional.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    textEl.textContent=data.content.map(i=>i.text||'').join('\n').trim();
+  }catch(e){textEl.textContent='⚠️ Gagal: '+e.message;}
+}
+
+function formatWaktu(iso){
+  if(!iso)return'—';
+  const diff=Math.floor((new Date()-new Date(iso))/1000);
+  if(diff<60)return'Baru saja';
+  if(diff<3600)return Math.floor(diff/60)+' menit lalu';
+  if(diff<86400)return Math.floor(diff/3600)+' jam lalu';
+  return Math.floor(diff/86400)+' hari lalu';
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
